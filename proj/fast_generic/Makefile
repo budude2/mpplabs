@@ -1,7 +1,7 @@
 CC = g++
 CFLAGS = -g -Wall
-SRCS = main.cpp 
-PROG = test
+SRCS = main.cpp support.cpp
+PROG = avg
 
 OPENCV = -lopencv_core -lopencv_highgui -lopencv_imgcodecs
 BOOST = -lboost_filesystem -lboost_system

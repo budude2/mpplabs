@@ -3,6 +3,7 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include "support.h"
 
 using namespace boost::filesystem;
 
@@ -22,6 +23,10 @@ int main(int argc, char* argv[])
     unsigned int index = 0;
     cv::vector<cv::Mat> img;
     path p(argv[1]);
+
+    Timer timer;
+
+    startTime(&timer);
 
     // Load all images from the specified folder
     try
@@ -73,6 +78,14 @@ int main(int argc, char* argv[])
     std::cout << "Images loaded..." << std::endl;
     std::cout << "Vector size: " << img.size() << std::endl;
 
+
+    stopTime(&timer);
+    std::cout << "Opening images......";
+    std::cout << elapsedTime(timer) << " s" << std::endl;
+
+    std::cout << "Processing images...";
+    startTime(&timer);
+
     unsigned int width  = img[0].cols;
     unsigned int height = img[0].rows;
 
@@ -88,6 +101,12 @@ int main(int argc, char* argv[])
     // Take the average
     res = res / img.size();
 
+    stopTime(&timer);
+    std::cout << elapsedTime(timer) << " s" << std::endl;
+
+    std::cout << "Writing image.......";
+    startTime(&timer);
+
     // Write the resulting image.
     res.convertTo(res, CV_8U);
 
@@ -95,6 +114,18 @@ int main(int argc, char* argv[])
     compression_param.push_back(cv::IMWRITE_JPEG_QUALITY);
     compression_param.push_back(100);
     cv::imwrite("result.jpg", res, compression_param);
+
+    stopTime(&timer);
+    std::cout << elapsedTime(timer) << " s" << std::endl;
+
+    // for(unsigned int i = 0; i < img.size(); i++)
+    // {
+    //     img[i].release();
+    // }
+
+    // res.release();
+
+    // delete &img;
 
     return 0;
 }
