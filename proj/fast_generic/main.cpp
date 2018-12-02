@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
 {
     if (argc < 2)
     {
-        std::cout << "Usage: tut3 path\n";
+        std::cout << "Usage: test path\n";
         return 1;
     }
 
@@ -23,13 +23,15 @@ int main(int argc, char* argv[])
     cv::vector<cv::Mat> img;
     path p(argv[1]);
 
+    // Load all images from the specified folder
     try
     {
         if (exists(p))
         {
             if (is_regular_file(p))
+            {
                 std::cout << "Please give a directory." << std::endl;
-
+            }
             else if (is_directory(p))
             {
                 std::cout << "Loading images from: " << p << "\n" << std::endl;
@@ -76,25 +78,22 @@ int main(int argc, char* argv[])
 
     cv::Mat res(height, width, CV_32FC3);
 
+    // Convert images to 3 channel float and find the sum.
     for(unsigned int i = 0; i < img.size(); i++)
     {
         img[i].convertTo(img[i], CV_32F);
         res += img[i];
-
     }
 
-    // for(unsigned int i = 0; i < img.size(); i++)
-    // {
-    //     res += img[i];
-    // }
-
+    // Take the average
     res = res / img.size();
+
+    // Write the resulting image.
+    res.convertTo(res, CV_8U);
 
     cv::vector<int> compression_param;
     compression_param.push_back(cv::IMWRITE_JPEG_QUALITY);
     compression_param.push_back(100);
-    res.convertTo(res, CV_8U);
-
     cv::imwrite("result.jpg", res, compression_param);
 
     return 0;
