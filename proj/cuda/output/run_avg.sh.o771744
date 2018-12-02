@@ -1,0 +1,6 @@
+Opening images..................8.39537 s
+Allocating memory on device.....0.171926 s
+Copying images to device........0.206726 s
+Running kernel..................0.00026 s
+Copying result from device......0.070072 s
+Write image to HD...............0.657186 s
