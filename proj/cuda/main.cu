@@ -3,10 +3,15 @@
 #include <opencv2/imgcodecs.hpp>
 #include <iostream>
 #include "kernel.cu"
+#include "support.h"
 
 int main()
 {
     std::vector<cv::Mat> img;
+    Timer timer;
+
+    std::cout << "Opening images....";
+    startTime(&timer);
 
     img.push_back(cv::imread("../noise_set2/noise1.jpg", 1));
     img.push_back(cv::imread("../noise_set2/noise2.jpg", 1));
@@ -36,7 +41,11 @@ int main()
         }
     }
 
-    std::cout << sizeof(imageData) / sizeof(*imageData) << std::endl;
+    stopTime(&timer);
+    std::cout << elapsedTime(timer) << " s" << std::endl;
+
+    std::cout << "Allocate arrays...";
+    startTime(&timer);
 
     const int resSize   = res.step * res.rows;
 
@@ -46,16 +55,47 @@ int main()
     cudaMalloc<unsigned char>(&img_d, blockSize);
     cudaMalloc<unsigned char>(&d_res, resSize);
 
+    stopTime(&timer);
+    std::cout << elapsedTime(timer) << " s" << std::endl;
+
+    std::cout << "Copy images.......";
+    startTime(&timer);
+
     cudaMemcpy(img_d, imageData, blockSize, cudaMemcpyHostToDevice);
+
+    stopTime(&timer);
+    std::cout << elapsedTime(timer) << " s" << std::endl;
+
+    std::cout << "Launch kernel.....";
+    startTime(&timer);
 
     const dim3 block(16,16);
     const dim3 grid((img[0].cols + block.x - 1)/block.x, (img[0].rows + block.y - 1)/block.y);
 
     image_proc<<<grid, block>>>(img_d, d_res, img[0].cols, img[0].rows, img[0].step, img[0].step * img[0].rows, img.size());
 
+    stopTime(&timer);
+    std::cout << elapsedTime(timer) << " s" << std::endl;
+
+    std::cout << "Copy result.......";
+    startTime(&timer);
+
     cudaMemcpy(res.ptr(), d_res, resSize, cudaMemcpyDeviceToHost);
 
-    cv::imwrite("result.jpg", res);
+    stopTime(&timer);
+    std::cout << elapsedTime(timer) << " s" << std::endl;
+
+    std::cout << "Write result......";
+    startTime(&timer);
+
+    std::vector<int> compression_param;
+    compression_param.push_back(cv::IMWRITE_JPEG_QUALITY);
+    compression_param.push_back(100);
+
+    cv::imwrite("result.jpg", res, compression_param);
+
+    stopTime(&timer);
+    std::cout << elapsedTime(timer) << " s" << std::endl;
 
     delete[] images;
     delete[] imageData;

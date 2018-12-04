@@ -1,0 +1,24 @@
+Opening images....4.40456 s
+Allocate arrays...0.083161 s
+Copy images.......0.054599 s
+Launch kernel.....1.9e-05 s
+Copy result.......0.038832 s
+Write result......0.416899 s
+
+4.99807 s
+
+
+Loading images from: "../noise_set2/"
+
+Loading: ../noise_set2/noise5.jpg
+Loading: ../noise_set2/noise4.jpg
+Loading: ../noise_set2/noise3.jpg
+Loading: ../noise_set2/noise1.jpg
+Loading: ../noise_set2/noise2.jpg
+Images loaded...
+Vector size: 5
+Opening images......3.94623 s
+Processing images...1.0429 s
+Writing image.......0.496843 s
+
+5.485973
