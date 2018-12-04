@@ -18,13 +18,16 @@ int main(int argc, char* argv[])
 
     img = loadFiles(argv);
 
-    cv::Mat res(img[0].rows, img[0].cols, CV_8UC3);
+    unsigned int numRows   = img[0].rows;
+    unsigned int numCols   = img[0].cols;
+    unsigned int stepSize  = img[0].step;
+    unsigned int vecSize   = img.size();            // Number of images loaded
 
-    unsigned int vecSize = img.size();
-    unsigned int imageSize = img[0].step * img[0].rows;
-    unsigned int blockSize = imageSize * vecSize;
+    unsigned int imageSize = stepSize * numRows;    // Size of the image in bytes
+    unsigned int blockSize = imageSize * vecSize;   // Total utilization of all images
 
-    unsigned char **images = new unsigned char*[vecSize];
+    cv::Mat res(numRows, numCols, CV_8UC3);
+
     unsigned char *imageData = new unsigned char[blockSize];
 
     std::cout << "\nOpening images....";
@@ -34,15 +37,7 @@ int main(int argc, char* argv[])
     startTime(&timer);
     for(unsigned int i = 0; i < vecSize; i++)
     {
-        images[i] = img[i].data;
-    }
-
-    for(unsigned int j = 0; j < vecSize; j++)
-    {
-        for(unsigned int i = 0; i < imageSize; i++)
-        {
-            imageData[j * imageSize + i] = images[j][i];
-        }
+        memcpy(&imageData[imageSize * i], img[i].data, imageSize);
     }
 
     std::cout << "Images -> block...";
@@ -54,11 +49,11 @@ int main(int argc, char* argv[])
 
     const int resSize   = res.step * res.rows;
 
-    unsigned char *d_res;
+    unsigned char *res_d;
     unsigned char *img_d;
 
     cudaMalloc<unsigned char>(&img_d, blockSize);
-    cudaMalloc<unsigned char>(&d_res, resSize);
+    cudaMalloc<unsigned char>(&res_d, resSize);
 
     stopTime(&timer);
     std::cout << elapsedTime(timer) << " s" << std::endl;
@@ -75,9 +70,9 @@ int main(int argc, char* argv[])
     startTime(&timer);
 
     const dim3 block(16,16);
-    const dim3 grid((img[0].cols + block.x - 1)/block.x, (img[0].rows + block.y - 1)/block.y);
+    const dim3 grid((numCols + block.x - 1)/block.x, (numRows + block.y - 1)/block.y);
 
-    image_proc<<<grid, block>>>(img_d, d_res, img[0].cols, img[0].rows, img[0].step, img[0].step * img[0].rows, img.size());
+    image_proc<<<grid, block>>>(img_d, res_d, numCols, numRows, stepSize, imageSize, vecSize);
 
     stopTime(&timer);
     std::cout << elapsedTime(timer) << " s" << std::endl;
@@ -85,7 +80,7 @@ int main(int argc, char* argv[])
     std::cout << "Copy result.......";
     startTime(&timer);
 
-    cudaMemcpy(res.ptr(), d_res, resSize, cudaMemcpyDeviceToHost);
+    cudaMemcpy(res.ptr(), res_d, resSize, cudaMemcpyDeviceToHost);
 
     stopTime(&timer);
     std::cout << elapsedTime(timer) << " s" << std::endl;
@@ -102,9 +97,8 @@ int main(int argc, char* argv[])
     stopTime(&timer);
     std::cout << elapsedTime(timer) << " s" << std::endl;
 
-    delete[] images;
     delete[] imageData;
     res.release();
     cudaFree(img_d);
-    cudaFree(d_res);
+    cudaFree(res_d);
 }
