@@ -22,9 +22,9 @@ __global__ void image_proc(unsigned char* images, unsigned char* output, unsigne
             red_avg   += images[imgNum * imageSize + image_idx + 2];
         }
 
-        blue_avg_char = blue_avg / 5;
-        green_avg_char = green_avg / 5;
-        red_avg_char = red_avg / 5;
+        blue_avg_char = blue_avg / numImg;
+        green_avg_char = green_avg / numImg;
+        red_avg_char = red_avg / numImg;
 
         output[res_idx]     = static_cast<unsigned char>(blue_avg_char);
         output[res_idx + 1] = static_cast<unsigned char>(green_avg_char);
