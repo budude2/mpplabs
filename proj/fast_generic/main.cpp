@@ -1,83 +1,24 @@
 #include <iostream>
-#include <boost/filesystem.hpp>
 #include <opencv2/opencv.hpp>
-#include <opencv2/imgcodecs.hpp>
-#include <opencv2/highgui/highgui.hpp>
 #include "support.h"
-
-using namespace boost::filesystem;
-
-namespace cv
-{
-    using std::vector;
-}
 
 int main(int argc, char* argv[])
 {
     if (argc < 2)
     {
-        std::cout << "Usage: test path\n";
+        std::cout << "Usage: avg [path to images]\n";
         return 1;
     }
 
-    unsigned int index = 0;
-    cv::vector<cv::Mat> img;
-    path p(argv[1]);
-
+    std::vector<cv::Mat> img;
     Timer timer;
 
     startTime(&timer);
 
-    // Load all images from the specified folder
-    try
-    {
-        if (exists(p))
-        {
-            if (is_regular_file(p))
-            {
-                std::cout << "Please give a directory." << std::endl;
-            }
-            else if (is_directory(p))
-            {
-                std::cout << "Loading images from: " << p << "\n" << std::endl;
-
-                for (directory_entry &x : directory_iterator(p))
-                {
-                    if(is_regular_file(x.path()))
-                    {
-                        std::cout << "Loading: " << x.path().string() << std::endl;
-
-                        img.push_back(cv::imread(x.path().string()));
-
-                        if (!img[index].data)
-                        {
-                            std::cin.get();
-                            return -1;
-                        }
-
-                        index++;
-                    }
-                }
-            }
-            else
-            {
-                std::cout << p << " exists, but is not a regular file or directory" << std::endl;
-            }
-        }
-        else
-        {
-            std::cout << p << " does not exist" << std::endl;
-        }
-    }
-
-    catch (const filesystem_error &ex)
-    {
-        std::cout << ex.what() << std::endl;
-    }
+    img = loadFiles(argv);
 
     std::cout << "Images loaded..." << std::endl;
     std::cout << "Vector size: " << img.size() << std::endl;
-
 
     stopTime(&timer);
     std::cout << "Opening images......";
@@ -110,7 +51,7 @@ int main(int argc, char* argv[])
     // Write the resulting image.
     res.convertTo(res, CV_8U);
 
-    cv::vector<int> compression_param;
+    std::vector<int> compression_param;
     compression_param.push_back(cv::IMWRITE_JPEG_QUALITY);
     compression_param.push_back(100);
     cv::imwrite("result.jpg", res, compression_param);
