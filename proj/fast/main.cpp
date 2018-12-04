@@ -71,7 +71,7 @@ int main()
     std::cout << "Writing image.......";
     startTime(&timer);
 
-    cv::vector<int> compression_param;
+    std::vector<int> compression_param;
     compression_param.push_back(cv::IMWRITE_JPEG_QUALITY);
     compression_param.push_back(100);
 
