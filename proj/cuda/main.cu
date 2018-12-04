@@ -8,29 +8,17 @@ int main()
 {
     std::vector<cv::Mat> img;
 
-    img.push_back(cv::imread("noise1.jpg", 1));
-    img.push_back(cv::imread("noise2.jpg", 1));
-    img.push_back(cv::imread("noise3.jpg", 1));
-    img.push_back(cv::imread("noise4.jpg", 1));
-    img.push_back(cv::imread("noise5.jpg", 1));
+    img.push_back(cv::imread("../noise_set2/noise1.jpg", 1));
+    img.push_back(cv::imread("../noise_set2/noise2.jpg", 1));
+    img.push_back(cv::imread("../noise_set2/noise3.jpg", 1));
+    img.push_back(cv::imread("../noise_set2/noise4.jpg", 1));
+    img.push_back(cv::imread("../noise_set2/noise5.jpg", 1));
 
-    std::cout << "Image 1 size: " << img[0].step * img[0].rows << std::endl;
-    std::cout << "Image 2 size: " << img[1].step * img[1].rows << std::endl;
-    std::cout << "Image 3 size: " << img[2].step * img[2].rows << std::endl;
-    std::cout << "Image 4 size: " << img[3].step * img[3].rows << std::endl;
-    std::cout << "Image 5 size: " << img[4].step * img[4].rows << std::endl;
-
-    std::cout << sizeof(cv::Mat) << std::endl;
-    std::cout << "Sizeof Vector: " << img[0].step * img[0].rows * img.size() << std::endl;
     cv::Mat res(img[0].rows, img[0].cols, CV_8UC3);
 
     unsigned int vecSize = img.size();
     unsigned int imageSize = img[0].step * img[0].rows;
-    unsigned int blockSize = imageSize * vecSize;    img.push_back(cv::imread("noise1.jpg", 1));
-    img.push_back(cv::imread("noise2.jpg", 1));
-    img.push_back(cv::imread("noise3.jpg", 1));
-    img.push_back(cv::imread("noise4.jpg", 1));
-    img.push_back(cv::imread("noise5.jpg", 1));
+    unsigned int blockSize = imageSize * vecSize;
 
     unsigned char **images = new unsigned char*[vecSize];
     unsigned char *imageData = new unsigned char[blockSize];
@@ -39,7 +27,6 @@ int main()
     {
         images[i] = img[i].data;
     }
-
 
     for(unsigned int j = 0; j < vecSize; j++)
     {

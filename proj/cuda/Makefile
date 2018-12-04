@@ -1,7 +1,7 @@
 
 NVCC        = nvcc
-NVCC_FLAGS  = -O3 -I/usr/local/cuda/include
-LD_FLAGS    = -lcudart -L/usr/local/cuda/lib64 -lopencv_core -lopencv_highgui -lopencv_imgcodecs
+NVCC_FLAGS  = -O3
+LD_FLAGS    = -lcudart -lopencv_core -lopencv_highgui -lopencv_imgcodecs
 EXE	        = avg
 OBJ	        = main.o support.o
 
