@@ -38,11 +38,11 @@ def redAvg():
             # Store average into red channel
             meanImg.itemset((row, col, 2), redAvg)
 
-image0 = cv2.imread('../image_set2/noise1.jpg', cv2.IMREAD_COLOR)
-image1 = cv2.imread('../image_set2/noise2.jpg', cv2.IMREAD_COLOR)
-image2 = cv2.imread('../image_set2/noise3.jpg', cv2.IMREAD_COLOR)
-image3 = cv2.imread('../image_set2/noise4.jpg', cv2.IMREAD_COLOR)
-image4 = cv2.imread('../image_set2/noise5.jpg', cv2.IMREAD_COLOR)
+image0 = cv2.imread('noise1.jpg', cv2.IMREAD_COLOR)
+image1 = cv2.imread('noise2.jpg', cv2.IMREAD_COLOR)
+image2 = cv2.imread('noise3.jpg', cv2.IMREAD_COLOR)
+image3 = cv2.imread('noise4.jpg', cv2.IMREAD_COLOR)
+image4 = cv2.imread('noise5.jpg', cv2.IMREAD_COLOR)
 
 numRow = image0.shape[0];
 numCol = image0.shape[1];

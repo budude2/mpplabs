@@ -4,3 +4,7 @@
 *.o
 
 proj/cuda/avg
+
+proj/fast/avg_st
+
+proj/slow/avg_st

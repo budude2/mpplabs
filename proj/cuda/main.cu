@@ -57,7 +57,6 @@ int main()
 
     cv::imwrite("result.jpg", res);
 
-
     delete[] images;
     delete[] imageData;
     res.release();

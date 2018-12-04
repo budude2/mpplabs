@@ -3,11 +3,6 @@
 #include <iostream>
 #include "support.h"
 
-namespace cv
-{
-    using std::vector;
-}
-
 int main()
 {
     Timer timer;
