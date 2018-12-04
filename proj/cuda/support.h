@@ -10,15 +10,10 @@ typedef struct
     struct timeval endTime;
 } Timer;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-    void startTime(Timer* timer);
-    void stopTime(Timer* timer);
-    float elapsedTime(Timer timer);
-    std::vector<cv::Mat> loadFiles(char **argv);
-#ifdef __cplusplus
-}
-#endif
+
+void startTime(Timer* timer);
+void stopTime(Timer* timer);
+float elapsedTime(Timer timer);
+std::vector<cv::Mat> loadFiles(char **argv);
 
 #endif

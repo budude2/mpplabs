@@ -2,6 +2,7 @@
 #include <iostream>
 #include "kernel.cu"
 #include "support.h"
+#include <cuda.h>
 
 int main(int argc, char* argv[])
 {
@@ -13,6 +14,7 @@ int main(int argc, char* argv[])
 
     std::vector<cv::Mat> img;
     Timer timer;
+    uint cuda_ret;
 
     startTime(&timer);
 
@@ -55,6 +57,7 @@ int main(int argc, char* argv[])
     cudaMalloc<unsigned char>(&img_d, blockSize);
     cudaMalloc<unsigned char>(&res_d, resSize);
 
+    cudaDeviceSynchronize();
     stopTime(&timer);
     std::cout << elapsedTime(timer) << " s" << std::endl;
 
@@ -63,6 +66,7 @@ int main(int argc, char* argv[])
 
     cudaMemcpy(img_d, imageData, blockSize, cudaMemcpyHostToDevice);
 
+    cudaDeviceSynchronize();
     stopTime(&timer);
     std::cout << elapsedTime(timer) << " s" << std::endl;
 
@@ -74,6 +78,13 @@ int main(int argc, char* argv[])
 
     image_proc<<<grid, block>>>(img_d, res_d, numCols, numRows, stepSize, imageSize, vecSize);
 
+    cuda_ret = cudaDeviceSynchronize();
+    if(cuda_ret != cudaSuccess){
+        std::cerr << ("Unable to launch kernel") << std::endl;
+        std::cerr << "Error code: " << cuda_ret << std::endl;
+        return -1;
+    }
+
     stopTime(&timer);
     std::cout << elapsedTime(timer) << " s" << std::endl;
 
@@ -81,6 +92,7 @@ int main(int argc, char* argv[])
     startTime(&timer);
 
     cudaMemcpy(res.ptr(), res_d, resSize, cudaMemcpyDeviceToHost);
+    cudaDeviceSynchronize();
 
     stopTime(&timer);
     std::cout << elapsedTime(timer) << " s" << std::endl;
@@ -101,4 +113,6 @@ int main(int argc, char* argv[])
     res.release();
     cudaFree(img_d);
     cudaFree(res_d);
+
+    return 0;
 }
