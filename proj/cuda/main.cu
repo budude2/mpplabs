@@ -1,23 +1,22 @@
 #include <opencv2/opencv.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgcodecs.hpp>
 #include <iostream>
 #include "kernel.cu"
 #include "support.h"
 
-int main()
+int main(int argc, char* argv[])
 {
+    if (argc < 2)
+    {
+        std::cout << "Usage: avg [path to images]\n";
+        return 1;
+    }
+
     std::vector<cv::Mat> img;
     Timer timer;
 
-    std::cout << "Opening images....";
     startTime(&timer);
 
-    img.push_back(cv::imread("../noise_set2/noise1.jpg", 1));
-    img.push_back(cv::imread("../noise_set2/noise2.jpg", 1));
-    img.push_back(cv::imread("../noise_set2/noise3.jpg", 1));
-    img.push_back(cv::imread("../noise_set2/noise4.jpg", 1));
-    img.push_back(cv::imread("../noise_set2/noise5.jpg", 1));
+    img = loadFiles(argv);
 
     cv::Mat res(img[0].rows, img[0].cols, CV_8UC3);
 
@@ -28,6 +27,11 @@ int main()
     unsigned char **images = new unsigned char*[vecSize];
     unsigned char *imageData = new unsigned char[blockSize];
 
+    std::cout << "\nOpening images....";
+    stopTime(&timer);
+    std::cout << elapsedTime(timer) << " s" << std::endl;
+
+    startTime(&timer);
     for(unsigned int i = 0; i < vecSize; i++)
     {
         images[i] = img[i].data;
@@ -41,6 +45,7 @@ int main()
         }
     }
 
+    std::cout << "Images -> block...";
     stopTime(&timer);
     std::cout << elapsedTime(timer) << " s" << std::endl;
 

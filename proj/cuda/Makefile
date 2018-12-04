@@ -1,7 +1,7 @@
 
 NVCC        = nvcc
 NVCC_FLAGS  = -O3
-LD_FLAGS    = -lcudart -lopencv_core -lopencv_highgui -lopencv_imgcodecs
+LD_FLAGS    = -lcudart -lopencv_core -lopencv_imgcodecs -lboost_filesystem -lboost_system
 EXE	        = avg
 OBJ	        = main.o support.o
 

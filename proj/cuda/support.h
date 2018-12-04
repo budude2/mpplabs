@@ -2,6 +2,7 @@
 #define __FILEH__
 
 #include <sys/time.h>
+#include <opencv2/opencv.hpp>
 
 typedef struct
 {
@@ -15,6 +16,7 @@ extern "C" {
     void startTime(Timer* timer);
     void stopTime(Timer* timer);
     float elapsedTime(Timer timer);
+    std::vector<cv::Mat> loadFiles(char **argv);
 #ifdef __cplusplus
 }
 #endif
