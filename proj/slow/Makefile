@@ -3,7 +3,7 @@ CFLAGS = -g -Wall
 SRCS = main.cpp support.cpp
 PROG = avg_st
 
-OPENCV = -lopencv_core -lopencv_highgui -lopencv_imgcodecs
+OPENCV = -lopencv_core -lopencv_imgcodecs -lboost_filesystem -lboost_system
 LIBS = $(OPENCV)
 
 $(PROG):$(SRCS)
