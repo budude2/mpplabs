@@ -11,9 +11,9 @@ __global__ void image_proc(unsigned char* images, unsigned char* output, unsigne
         float blue_avg  = 0;
         float green_avg = 0;
         float red_avg   = 0;
-        unsigned char blue_avg_char = 0;
+        unsigned char blue_avg_char  = 0;
         unsigned char green_avg_char = 0;
-        unsigned char red_avg_char = 0;
+        unsigned char red_avg_char   = 0;
 
         for(unsigned int imgNum = 0; imgNum < numImg; imgNum++)
         {
