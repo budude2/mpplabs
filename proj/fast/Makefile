@@ -1,14 +1,11 @@
 CC = g++
-CFLAGS = -g -Wall
+CFLAGS = -g -Wall -std=c++11
 SRCS = main.cpp support.cpp
-PROG = avg_st
+PROG = avg
 
-OPENCV = -lopencv_core -lopencv_highgui -lopencv_imgcodecs
-LIBS = $(OPENCV)
+OPENCV = -lopencv_core -lopencv_imgcodecs
+BOOST = -lboost_filesystem -lboost_system
+LIBS = $(OPENCV) $(BOOST)
 
 $(PROG):$(SRCS)
 		$(CC) $(CFLAGS) -o $(PROG) $(SRCS) $(LIBS)
-
-slow:avg_st_slow.cpp
-		$(CC) $(CFLAGS) -o avg_st_slow avg_st_slow.cpp $(LIBS)
-
