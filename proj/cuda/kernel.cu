@@ -1,12 +1,12 @@
-__global__ void image_proc(unsigned char* images, unsigned char* output, unsigned int width, unsigned int height, unsigned int colorSize, unsigned int imageSize, unsigned int numImg)
+__global__ void image_proc(unsigned char* images, unsigned char* output, unsigned int width, unsigned int height, unsigned int colorSize, unsigned long long imageSize, unsigned int numImg)
 {
-    const int xIndex = blockIdx.x * blockDim.x + threadIdx.x;
-    const int yIndex = blockIdx.y * blockDim.y + threadIdx.y;
+    const unsigned int xIndex = blockIdx.x * blockDim.x + threadIdx.x;
+    const unsigned int yIndex = blockIdx.y * blockDim.y + threadIdx.y;
 
     if((xIndex < width) & (yIndex < height))
     {
-        const int image_idx  = yIndex * colorSize + (3 * xIndex);
-        const int res_idx    = yIndex * colorSize + (3 * xIndex);
+        const unsigned int image_idx  = yIndex * colorSize + (3 * xIndex);
+        const unsigned int res_idx    = yIndex * colorSize + (3 * xIndex);
 
         float blue_avg = 0;
         float green_avg = 0;

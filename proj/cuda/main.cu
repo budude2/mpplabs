@@ -14,7 +14,7 @@ int main(int argc, char* argv[])
 
     std::vector<cv::Mat> img;
     Timer timer;
-    uint cuda_ret;
+    cudaError_t cuda_ret;
 
     startTime(&timer);
 
@@ -25,8 +25,8 @@ int main(int argc, char* argv[])
     unsigned int stepSize  = img[0].step;
     unsigned int vecSize   = img.size();            // Number of images loaded
 
-    unsigned int imageSize = stepSize * numRows;    // Size of the image in bytes
-    unsigned int blockSize = imageSize * vecSize;   // Total utilization of all images
+    unsigned long long imageSize = stepSize * numRows;    // Size of the image in bytes
+    unsigned long long blockSize = imageSize * vecSize;   // Total utilization of all images
 
     cv::Mat res(numRows, numCols, CV_8UC3);
 
@@ -54,19 +54,47 @@ int main(int argc, char* argv[])
     unsigned char *res_d;
     unsigned char *img_d;
 
-    cudaMalloc<unsigned char>(&img_d, blockSize);
-    cudaMalloc<unsigned char>(&res_d, resSize);
+    cuda_ret = cudaMalloc<unsigned char>(&img_d, blockSize);
+    if(cuda_ret != cudaSuccess){
+        std::cerr << ("Unable to allocate memory") << std::endl;
+        std::cerr << "Error code: " << cuda_ret << std::endl;
+        return -1;
+    }
 
-    cudaDeviceSynchronize();
+    cuda_ret = cudaMalloc<unsigned char>(&res_d, resSize);
+    if(cuda_ret != cudaSuccess){
+        std::cerr << ("Unable to allocate memory") << std::endl;
+        std::cerr << "Error code: " << cuda_ret << std::endl;
+        return -1;
+    }
+
+    cuda_ret = cudaDeviceSynchronize();
+    if(cuda_ret != cudaSuccess){
+        std::cerr << ("Sync error") << std::endl;
+        std::cerr << "Error code: " << cuda_ret << std::endl;
+        return -1;
+    }
+
     stopTime(&timer);
     std::cout << elapsedTime(timer) << " s" << std::endl;
 
     std::cout << "Copy images.......";
     startTime(&timer);
 
-    cudaMemcpy(img_d, imageData, blockSize, cudaMemcpyHostToDevice);
+    cuda_ret = cudaMemcpy(img_d, imageData, blockSize, cudaMemcpyHostToDevice);
+    if(cuda_ret != cudaSuccess){
+        std::cerr << ("Unable to copy data") << std::endl;
+        std::cerr << "Error code: " << cuda_ret << std::endl;
+        return -2;
+    }
+    cuda_ret = cudaDeviceSynchronize();
+    if(cuda_ret != cudaSuccess){
+        std::cerr << ("Sync error") << std::endl;
+        std::cerr << "Error code: " << cuda_ret << std::endl;
+        return -2;
+    }
 
-    cudaDeviceSynchronize();
+
     stopTime(&timer);
     std::cout << elapsedTime(timer) << " s" << std::endl;
 
@@ -82,7 +110,7 @@ int main(int argc, char* argv[])
     if(cuda_ret != cudaSuccess){
         std::cerr << ("Unable to launch kernel") << std::endl;
         std::cerr << "Error code: " << cuda_ret << std::endl;
-        return -1;
+        return -2;
     }
 
     stopTime(&timer);
