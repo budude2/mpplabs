@@ -3,6 +3,7 @@
 #include "kernel.cu"
 #include "support.h"
 #include <cuda.h>
+#include <cuda_profiler_api.h>
 
 int main(int argc, char* argv[])
 {
@@ -30,20 +31,25 @@ int main(int argc, char* argv[])
 
     cv::Mat res(numRows, numCols, CV_8UC3);
 
-    unsigned char *imageData = new unsigned char[blockSize];
+    //unsigned char *imageData = new unsigned char[blockSize];
+    unsigned char *imageData;
+    cuda_ret = cudaMallocHost((void**)&imageData, blockSize);
+    if (cuda_ret != cudaSuccess)
+        printf("Error allocating pinned host memory\n");
 
-    std::cout << "\nOpening images....";
     stopTime(&timer);
+    std::cout << "\nOpening images....";
     std::cout << elapsedTime(timer) << " s" << std::endl;
 
     startTime(&timer);
     for(unsigned int i = 0; i < vecSize; i++)
     {
         memcpy(&imageData[imageSize * i], img[i].data, imageSize);
+        //img[i].release();
     }
 
-    std::cout << "Images -> block...";
     stopTime(&timer);
+    std::cout << "Images -> block...";
     std::cout << elapsedTime(timer) << " s" << std::endl;
 
     std::cout << "Allocate arrays...";
@@ -94,7 +100,6 @@ int main(int argc, char* argv[])
         return -2;
     }
 
-
     stopTime(&timer);
     std::cout << elapsedTime(timer) << " s" << std::endl;
 
@@ -137,7 +142,7 @@ int main(int argc, char* argv[])
     stopTime(&timer);
     std::cout << elapsedTime(timer) << " s" << std::endl;
 
-    delete[] imageData;
+    cudaFreeHost(imageData);
     res.release();
     cudaFree(img_d);
     cudaFree(res_d);
