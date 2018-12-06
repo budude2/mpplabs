@@ -17,9 +17,21 @@ int main(int argc, char* argv[])
     Timer timer;
     cudaError_t cuda_ret;
 
+    /**********************************
+        LOAD IMAGES
+    **********************************/
     startTime(&timer);
 
     img = loadFiles(argv);
+
+    stopTime(&timer);
+    std::cout << "\nOpening images.....";
+    std::cout << elapsedTime(timer) << " s" << std::endl;
+
+    /**********************************
+        Setup & allocation
+    **********************************/
+    startTime(&timer);
 
     unsigned int numRows   = img[0].rows;
     unsigned int numCols   = img[0].cols;
@@ -31,29 +43,10 @@ int main(int argc, char* argv[])
 
     cv::Mat res(numRows, numCols, CV_8UC3);
 
-    //unsigned char *imageData = new unsigned char[blockSize];
     unsigned char *imageData;
     cuda_ret = cudaMallocHost((void**)&imageData, blockSize);
     if (cuda_ret != cudaSuccess)
         printf("Error allocating pinned host memory\n");
-
-    stopTime(&timer);
-    std::cout << "\nOpening images....";
-    std::cout << elapsedTime(timer) << " s" << std::endl;
-
-    startTime(&timer);
-    for(unsigned int i = 0; i < vecSize; i++)
-    {
-        memcpy(&imageData[imageSize * i], img[i].data, imageSize);
-        //img[i].release();
-    }
-
-    stopTime(&timer);
-    std::cout << "Images -> block...";
-    std::cout << elapsedTime(timer) << " s" << std::endl;
-
-    std::cout << "Allocate arrays...";
-    startTime(&timer);
 
     const int resSize   = res.step * res.rows;
 
@@ -82,9 +75,24 @@ int main(int argc, char* argv[])
     }
 
     stopTime(&timer);
-    std::cout << elapsedTime(timer) << " s" << std::endl;
+    std::cout << "Setup & allocate..." << elapsedTime(timer) << " s" << std::endl;
 
-    std::cout << "Copy images.......";
+    /**********************************
+        Data setup
+    **********************************/
+    startTime(&timer);
+
+    for(unsigned int i = 0; i < vecSize; i++)
+    {
+        memcpy(&imageData[imageSize * i], img[i].data, imageSize);
+    }
+    
+    stopTime(&timer);
+    std::cout << "Data setup........." << elapsedTime(timer) << " s" << std::endl;
+
+    /**********************************
+        Data copy
+    **********************************/   
     startTime(&timer);
 
     cuda_ret = cudaMemcpy(img_d, imageData, blockSize, cudaMemcpyHostToDevice);
@@ -101,9 +109,11 @@ int main(int argc, char* argv[])
     }
 
     stopTime(&timer);
-    std::cout << elapsedTime(timer) << " s" << std::endl;
+    std::cout << "Data copy.........." << elapsedTime(timer) << " s" << std::endl;
 
-    std::cout << "Launch kernel.....";
+    /**********************************
+        Run kernel
+    **********************************/
     startTime(&timer);
 
     const dim3 block(16,16);
@@ -119,18 +129,22 @@ int main(int argc, char* argv[])
     }
 
     stopTime(&timer);
-    std::cout << elapsedTime(timer) << " s" << std::endl;
+    std::cout << "Run kernel........." << elapsedTime(timer) << " s" << std::endl;
 
-    std::cout << "Copy result.......";
+    /**********************************
+        Copy result
+    **********************************/
     startTime(&timer);
 
     cudaMemcpy(res.ptr(), res_d, resSize, cudaMemcpyDeviceToHost);
     cudaDeviceSynchronize();
 
     stopTime(&timer);
-    std::cout << elapsedTime(timer) << " s" << std::endl;
+    std::cout << "Copy result........" <<elapsedTime(timer) << " s" << std::endl;
 
-    std::cout << "Write result......";
+    /**********************************
+        Copy result
+    **********************************/
     startTime(&timer);
 
     std::vector<int> compression_param;
@@ -140,7 +154,7 @@ int main(int argc, char* argv[])
     cv::imwrite("result.jpg", res, compression_param);
 
     stopTime(&timer);
-    std::cout << elapsedTime(timer) << " s" << std::endl;
+    std::cout << "Write result......." << elapsedTime(timer) << " s" << std::endl;
 
     cudaFreeHost(imageData);
     res.release();
