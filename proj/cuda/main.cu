@@ -3,7 +3,6 @@
 #include "kernel.cu"
 #include "support.h"
 #include <cuda.h>
-#include <cuda_profiler_api.h>
 
 int main(int argc, char* argv[])
 {
@@ -13,9 +12,9 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+    Timer timer;
     std::vector<cv::Mat> img;
     std::vector<cv::Mat> channels(3);
-    Timer timer;
     cudaError_t cuda_ret;
 
     cudaStream_t blueStream, greenStream, redStream;
@@ -23,17 +22,28 @@ int main(int argc, char* argv[])
     cudaStreamCreate(&greenStream);
     cudaStreamCreate(&redStream);
 
+    /**********************************
+        LOAD IMAGES
+    **********************************/
     startTime(&timer);
 
     img = loadFiles(argv);
+
+    stopTime(&timer);
+    std::cout << "\nLoad images.........." << elapsedTime(timer) << " s" << std::endl;
+
+    /**********************************
+        Setup & allocation
+    **********************************/
+    startTime(&timer);
 
     const unsigned int numRows   = img[0].rows;
     const unsigned int numCols   = img[0].cols;
     const unsigned int stepSize  = img[0].step;
     const unsigned int vecSize   = img.size();            // Number of images loaded
 
-    const unsigned long long imageSize = stepSize * numRows;    // Size of the image in bytes
-    const unsigned long long channelSize = imageSize / 3;
+    const unsigned long long imageSize        = stepSize * numRows;    // Size of the image in bytes
+    const unsigned long long channelSize      = imageSize / 3;
     const unsigned long long channelBlockSize = channelSize * vecSize;
 
     cv::Mat res(numRows, numCols, CV_8UC3);
@@ -41,7 +51,7 @@ int main(int argc, char* argv[])
     cv::Mat greenres(numRows, numCols, CV_8UC1);
     cv::Mat redres(numRows, numCols, CV_8UC1);
 
-    const unsigned int resSize   = res.step * res.rows;
+    const unsigned int resSize        = res.step * res.rows;
     const unsigned int resChannelSize = resSize / 3;
 
     unsigned char *blueData;
@@ -74,14 +84,6 @@ int main(int argc, char* argv[])
     if (cuda_ret != cudaSuccess)
         printf("Error allocating pinned host memory\n");
 
-    for(unsigned int i = 0; i < vecSize; i++)
-    {
-        split(img[i], channels);
-        memcpy(&blueData[channelSize * i], channels[0].data, channelSize);
-        memcpy(&greenData[channelSize * i], channels[1].data, channelSize);
-        memcpy(&redData[channelSize * i], channels[2].data, channelSize);
-    }
-
     unsigned char *blue_d, *green_d, *red_d;
     unsigned char *resblue_d, *resgreen_d, *resred_d;
 
@@ -98,6 +100,30 @@ int main(int argc, char* argv[])
         std::cerr << "Error code: " << cuda_ret << std::endl;
         return -1;
     }
+
+    stopTime(&timer);
+    std::cout << "Setup & allocation..." << elapsedTime(timer) << " s" << std::endl;
+
+    /**********************************
+        Data setup
+    **********************************/
+    startTime(&timer);
+
+    for(unsigned int i = 0; i < vecSize; i++)
+    {
+        split(img[i], channels);
+        memcpy(&blueData[channelSize * i], channels[0].data, channelSize);
+        memcpy(&greenData[channelSize * i], channels[1].data, channelSize);
+        memcpy(&redData[channelSize * i], channels[2].data, channelSize);
+    }
+
+    stopTime(&timer);
+    std::cout << "Data setup..........." << elapsedTime(timer) << " s" << std::endl;
+
+    /**********************************
+        Run kernel
+    **********************************/
+    startTime(&timer);
 
     const dim3 block(16,16);
     const dim3 grid((numCols + block.x - 1)/block.x, (numRows + block.y - 1)/block.y);
@@ -116,6 +142,15 @@ int main(int argc, char* argv[])
 
     cudaDeviceSynchronize();
 
+    stopTime(&timer);
+    std::cout << "Run kernel..........." << elapsedTime(timer) << " s" << std::endl;
+
+    /**********************************
+        Merge data
+    **********************************/
+
+    startTime(&timer);
+
     memcpy(blueres.ptr(), blueResData, resChannelSize);
     memcpy(greenres.ptr(), greenResData, resChannelSize);
     memcpy(redres.ptr(), redResData, resChannelSize);
@@ -127,20 +162,19 @@ int main(int argc, char* argv[])
 
     cv::merge(resChannels, res);
 
-    // stopTime(&timer);
-    // std::cout << elapsedTime(timer) << " s" << std::endl;
+    stopTime(&timer);
+    std::cout << "Merge data..........." << elapsedTime(timer) << " s" << std::endl;
 
-    // std::cout << "Write result......";    // stopTime(&timer);
-    // std::cout << elapsedTime(timer) << " s" << std::endl;
-
-    // std::cout << "Write result......";
-    // startTime(&timer);
+    startTime(&timer);
 
     std::vector<int> compression_param;
     compression_param.push_back(cv::IMWRITE_JPEG_QUALITY);
     compression_param.push_back(100);
 
     cv::imwrite("result.jpg", res, compression_param);
+
+    stopTime(&timer);
+    std::cout << "Write data..........." << elapsedTime(timer) << " s" << std::endl;
 
     // stopTime(&timer);
     // std::cout << elapsedTime(timer) << " s" << std::endl;
