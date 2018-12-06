@@ -116,7 +116,7 @@ int main(int argc, char* argv[])
     **********************************/
     startTime(&timer);
 
-    const dim3 block(16,16);
+    const dim3 block(32,32);
     const dim3 grid((numCols + block.x - 1)/block.x, (numRows + block.y - 1)/block.y);
 
     image_proc<<<grid, block>>>(img_d, res_d, numCols, numRows, stepSize, imageSize, vecSize);
