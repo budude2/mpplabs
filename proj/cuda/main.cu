@@ -14,124 +14,127 @@ int main(int argc, char* argv[])
     }
 
     std::vector<cv::Mat> img;
+    std::vector<cv::Mat> channels(3);
     Timer timer;
     cudaError_t cuda_ret;
+
+    cudaStream_t blueStream, greenStream, redStream;
+    cudaStreamCreate(&blueStream);
+    cudaStreamCreate(&greenStream);
+    cudaStreamCreate(&redStream);
 
     startTime(&timer);
 
     img = loadFiles(argv);
 
-    unsigned int numRows   = img[0].rows;
-    unsigned int numCols   = img[0].cols;
-    unsigned int stepSize  = img[0].step;
-    unsigned int vecSize   = img.size();            // Number of images loaded
+    const unsigned int numRows   = img[0].rows;
+    const unsigned int numCols   = img[0].cols;
+    const unsigned int stepSize  = img[0].step;
+    const unsigned int vecSize   = img.size();            // Number of images loaded
 
-    unsigned long long imageSize = stepSize * numRows;    // Size of the image in bytes
-    unsigned long long blockSize = imageSize * vecSize;   // Total utilization of all images
+    const unsigned long long imageSize = stepSize * numRows;    // Size of the image in bytes
+    const unsigned long long channelSize = imageSize / 3;
+    const unsigned long long channelBlockSize = channelSize * vecSize;
 
     cv::Mat res(numRows, numCols, CV_8UC3);
+    cv::Mat blueres(numRows, numCols, CV_8UC1);
+    cv::Mat greenres(numRows, numCols, CV_8UC1);
+    cv::Mat redres(numRows, numCols, CV_8UC1);
 
-    //unsigned char *imageData = new unsigned char[blockSize];
-    unsigned char *imageData;
-    cuda_ret = cudaMallocHost((void**)&imageData, blockSize);
+    const unsigned int resSize   = res.step * res.rows;
+    const unsigned int resChannelSize = resSize / 3;
+
+    unsigned char *blueData;
+    cuda_ret = cudaMallocHost((void**)&blueData, channelBlockSize);
     if (cuda_ret != cudaSuccess)
         printf("Error allocating pinned host memory\n");
 
-    stopTime(&timer);
-    std::cout << "\nOpening images....";
-    std::cout << elapsedTime(timer) << " s" << std::endl;
+    unsigned char *greenData;
+    cuda_ret = cudaMallocHost((void**)&greenData, channelBlockSize);
+    if (cuda_ret != cudaSuccess)
+        printf("Error allocating pinned host memory\n");
 
-    startTime(&timer);
+    unsigned char *redData;
+    cuda_ret = cudaMallocHost((void**)&redData, channelBlockSize);
+    if (cuda_ret != cudaSuccess)
+        printf("Error allocating pinned host memory\n");
+
+    unsigned char *blueResData;
+    cuda_ret = cudaMallocHost((void**)&blueResData, resChannelSize);
+    if (cuda_ret != cudaSuccess)
+        printf("Error allocating pinned host memory\n");
+
+    unsigned char *greenResData;
+    cuda_ret = cudaMallocHost((void**)&greenResData, resChannelSize);
+    if (cuda_ret != cudaSuccess)
+        printf("Error allocating pinned host memory\n");
+
+    unsigned char *redResData;
+    cuda_ret = cudaMallocHost((void**)&redResData, resChannelSize);
+    if (cuda_ret != cudaSuccess)
+        printf("Error allocating pinned host memory\n");
+
     for(unsigned int i = 0; i < vecSize; i++)
     {
-        memcpy(&imageData[imageSize * i], img[i].data, imageSize);
-        //img[i].release();
+        split(img[i], channels);
+        memcpy(&blueData[channelSize * i], channels[0].data, channelSize);
+        memcpy(&greenData[channelSize * i], channels[1].data, channelSize);
+        memcpy(&redData[channelSize * i], channels[2].data, channelSize);
     }
 
-    stopTime(&timer);
-    std::cout << "Images -> block...";
-    std::cout << elapsedTime(timer) << " s" << std::endl;
+    unsigned char *blue_d, *green_d, *red_d;
+    unsigned char *resblue_d, *resgreen_d, *resred_d;
 
-    std::cout << "Allocate arrays...";
-    startTime(&timer);
-
-    const int resSize   = res.step * res.rows;
-
-    unsigned char *res_d;
-    unsigned char *img_d;
-
-    cuda_ret = cudaMalloc<unsigned char>(&img_d, blockSize);
-    if(cuda_ret != cudaSuccess){
-        std::cerr << ("Unable to allocate memory") << std::endl;
-        std::cerr << "Error code: " << cuda_ret << std::endl;
-        return -1;
-    }
-
-    cuda_ret = cudaMalloc<unsigned char>(&res_d, resSize);
-    if(cuda_ret != cudaSuccess){
-        std::cerr << ("Unable to allocate memory") << std::endl;
-        std::cerr << "Error code: " << cuda_ret << std::endl;
-        return -1;
-    }
-
+    cuda_ret = cudaMalloc<unsigned char>(&blue_d, channelBlockSize);
+    cuda_ret = cudaMalloc<unsigned char>(&green_d, channelBlockSize);
+    cuda_ret = cudaMalloc<unsigned char>(&red_d, channelBlockSize);
+    cuda_ret = cudaMalloc<unsigned char>(&resblue_d, resChannelSize);
+    cuda_ret = cudaMalloc<unsigned char>(&resgreen_d, resChannelSize);
+    cuda_ret = cudaMalloc<unsigned char>(&resred_d, resChannelSize);
+    
     cuda_ret = cudaDeviceSynchronize();
     if(cuda_ret != cudaSuccess){
         std::cerr << ("Sync error") << std::endl;
         std::cerr << "Error code: " << cuda_ret << std::endl;
         return -1;
     }
-
-    stopTime(&timer);
-    std::cout << elapsedTime(timer) << " s" << std::endl;
-
-    std::cout << "Copy images.......";
-    startTime(&timer);
-
-    cuda_ret = cudaMemcpy(img_d, imageData, blockSize, cudaMemcpyHostToDevice);
-    if(cuda_ret != cudaSuccess){
-        std::cerr << ("Unable to copy data") << std::endl;
-        std::cerr << "Error code: " << cuda_ret << std::endl;
-        return -2;
-    }
-    cuda_ret = cudaDeviceSynchronize();
-    if(cuda_ret != cudaSuccess){
-        std::cerr << ("Sync error") << std::endl;
-        std::cerr << "Error code: " << cuda_ret << std::endl;
-        return -2;
-    }
-
-    stopTime(&timer);
-    std::cout << elapsedTime(timer) << " s" << std::endl;
-
-    std::cout << "Launch kernel.....";
-    startTime(&timer);
 
     const dim3 block(16,16);
     const dim3 grid((numCols + block.x - 1)/block.x, (numRows + block.y - 1)/block.y);
 
-    image_proc<<<grid, block>>>(img_d, res_d, numCols, numRows, stepSize, imageSize, vecSize);
+    cudaMemcpyAsync(blue_d, blueData, channelBlockSize, cudaMemcpyHostToDevice, blueStream);
+    cudaMemcpyAsync(green_d, greenData, channelBlockSize, cudaMemcpyHostToDevice, greenStream);
+    cudaMemcpyAsync(red_d, redData, channelBlockSize, cudaMemcpyHostToDevice, redStream);
 
-    cuda_ret = cudaDeviceSynchronize();
-    if(cuda_ret != cudaSuccess){
-        std::cerr << ("Unable to launch kernel") << std::endl;
-        std::cerr << "Error code: " << cuda_ret << std::endl;
-        return -2;
-    }
+    blue_proc<<<grid, block, 0, blueStream>>>(blue_d, resblue_d, numCols, numRows, stepSize/3, channelSize, vecSize);
+    green_proc<<<grid, block, 0, greenStream>>>(green_d, resgreen_d, numCols, numRows, stepSize/3, channelSize, vecSize);
+    red_proc<<<grid, block, 0, redStream>>>(red_d, resred_d, numCols, numRows, stepSize/3, channelSize, vecSize);
 
-    stopTime(&timer);
-    std::cout << elapsedTime(timer) << " s" << std::endl;
+    cudaMemcpyAsync(blueResData, resblue_d, resChannelSize, cudaMemcpyDeviceToHost, blueStream);
+    cudaMemcpyAsync(greenResData, resgreen_d, resChannelSize, cudaMemcpyDeviceToHost, greenStream);
+    cudaMemcpyAsync(redResData, resred_d, resChannelSize, cudaMemcpyDeviceToHost, redStream);
 
-    std::cout << "Copy result.......";
-    startTime(&timer);
-
-    cudaMemcpy(res.ptr(), res_d, resSize, cudaMemcpyDeviceToHost);
     cudaDeviceSynchronize();
 
-    stopTime(&timer);
-    std::cout << elapsedTime(timer) << " s" << std::endl;
+    memcpy(blueres.ptr(), blueResData, resChannelSize);
+    memcpy(greenres.ptr(), greenResData, resChannelSize);
+    memcpy(redres.ptr(), redResData, resChannelSize);
 
-    std::cout << "Write result......";
-    startTime(&timer);
+    std::vector<cv::Mat> resChannels;
+    resChannels.push_back(blueres);
+    resChannels.push_back(greenres);
+    resChannels.push_back(redres);
+
+    cv::merge(resChannels, res);
+
+    // stopTime(&timer);
+    // std::cout << elapsedTime(timer) << " s" << std::endl;
+
+    // std::cout << "Write result......";    // stopTime(&timer);
+    // std::cout << elapsedTime(timer) << " s" << std::endl;
+
+    // std::cout << "Write result......";
+    // startTime(&timer);
 
     std::vector<int> compression_param;
     compression_param.push_back(cv::IMWRITE_JPEG_QUALITY);
@@ -139,13 +142,19 @@ int main(int argc, char* argv[])
 
     cv::imwrite("result.jpg", res, compression_param);
 
-    stopTime(&timer);
-    std::cout << elapsedTime(timer) << " s" << std::endl;
-
-    cudaFreeHost(imageData);
+    // stopTime(&timer);
+    // std::cout << elapsedTime(timer) << " s" << std::endl;
+    
+    cudaFreeHost(blue_d);
+    cudaFreeHost(green_d);
+    cudaFreeHost(red_d);
+    cudaFreeHost(resblue_d);
+    cudaFreeHost(resgreen_d);
+    cudaFreeHost(resred_d);
     res.release();
-    cudaFree(img_d);
-    cudaFree(res_d);
+
+    // cudaProfilerStop();
+    // cudaDeviceReset();
 
     return 0;
 }
