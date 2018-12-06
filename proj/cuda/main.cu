@@ -17,6 +17,10 @@ int main(int argc, char* argv[])
     Timer timer;
     cudaError_t cuda_ret;
 
+    cudaStream_t blueStream, greenStream, redStream;
+    cudaStreamCreate(&blueStream);
+    cudaStreamCreate(&greenStream);
+    cudaStreamCreate(&redStream);
     /**********************************
         LOAD IMAGES
     **********************************/
@@ -112,14 +116,17 @@ int main(int argc, char* argv[])
     std::cout << "Data copy.........." << elapsedTime(timer) << " s" << std::endl;
 
     /**********************************
-        Run kernel
+        Run kernels
     **********************************/
     startTime(&timer);
 
     const dim3 block(16,16);
     const dim3 grid((numCols + block.x - 1)/block.x, (numRows + block.y - 1)/block.y);
 
-    image_proc<<<grid, block>>>(img_d, res_d, numCols, numRows, stepSize, imageSize, vecSize);
+    blue_proc<<<grid, block, 0, blueStream>>>(img_d, res_d, numCols, numRows, stepSize, imageSize, vecSize);
+    green_proc<<<grid, block, 0, greenStream>>>(img_d, res_d, numCols, numRows, stepSize, imageSize, vecSize);
+    red_proc<<<grid, block, 0, redStream>>>(img_d, res_d, numCols, numRows, stepSize, imageSize, vecSize);
+
 
     cuda_ret = cudaDeviceSynchronize();
     if(cuda_ret != cudaSuccess){
