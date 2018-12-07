@@ -1,6 +1,6 @@
 
 NVCC        = nvcc
-NVCC_FLAGS  = -O3 --default-stream per-thread
+NVCC_FLAGS  = -O3 --default-stream per-thread --std c++11 -use_fast_math
 LD_FLAGS    = -lcudart -lopencv_core -lopencv_imgcodecs -lboost_filesystem -lboost_system
 EXE	        = avg
 OBJ	        = main.o support.o

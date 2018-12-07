@@ -8,7 +8,8 @@ __global__ void blue_proc(unsigned char* images, unsigned char* output, unsigned
         const unsigned int image_idx  = yIndex * colorSize + xIndex;
         const unsigned int res_idx    = yIndex * colorSize + xIndex;
 
-        float blue_avg  = 0;
+        __shared__ float blue_avg;
+        blue_avg = 0;
         unsigned char blue_avg_char  = 0;
 
         for(unsigned int imgNum = 0; imgNum < numImg; imgNum++)
@@ -31,7 +32,8 @@ __global__ void green_proc(unsigned char* images, unsigned char* output, unsigne
         const unsigned int image_idx  = yIndex * colorSize + xIndex;
         const unsigned int res_idx    = yIndex * colorSize + xIndex;
 
-        float green_avg = 0;
+        __shared__ float green_avg;
+        green_avg = 0;
         unsigned char green_avg_char = 0;
 
         for(unsigned int imgNum = 0; imgNum < numImg; imgNum++)
@@ -55,7 +57,8 @@ __global__ void red_proc(unsigned char* images, unsigned char* output, unsigned 
         const unsigned int image_idx  = yIndex * colorSize + xIndex;
         const unsigned int res_idx    = yIndex * colorSize + xIndex;
 
-        float red_avg   = 0;
+        __shared__ float red_avg;
+        red_avg = 0;
         unsigned char red_avg_char   = 0;
 
         for(unsigned int imgNum = 0; imgNum < numImg; imgNum++)
