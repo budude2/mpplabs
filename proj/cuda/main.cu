@@ -140,7 +140,7 @@ int main(int argc, char* argv[])
     cudaMemcpyAsync(greenResData, resgreen_d, resChannelSize, cudaMemcpyDeviceToHost, greenStream);
     cudaMemcpyAsync(redResData, resred_d, resChannelSize, cudaMemcpyDeviceToHost, redStream);
 
-    cudaDeviceSynchronize();
+    //cudaDeviceSynchronize();
 
     stopTime(&timer);
     std::cout << "Run kernel..........." << elapsedTime(timer) << " s" << std::endl;
@@ -151,8 +151,13 @@ int main(int argc, char* argv[])
 
     startTime(&timer);
 
+    cudaStreamSynchronize(blueStream);
     memcpy(blueres.ptr(), blueResData, resChannelSize);
+
+    cudaStreamSynchronize(greenStream);
     memcpy(greenres.ptr(), greenResData, resChannelSize);
+
+    cudaStreamSynchronize(redStream);
     memcpy(redres.ptr(), redResData, resChannelSize);
 
     std::vector<cv::Mat> resChannels;
