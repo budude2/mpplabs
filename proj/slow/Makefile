@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -g -Wall
+CFLAGS = -O3 -Wall
 SRCS = main.cpp support.cpp
 PROG = avg_st
 
